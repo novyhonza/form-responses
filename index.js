@@ -2,24 +2,24 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { google } = require('googleapis');
-const fs = require('fs');
 const path = require('path');
+require('dotenv').config(); // Načtení environmentálních proměnných
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware pro zpracování JSON a CORS
 app.use(bodyParser.json());
 app.use(cors());
 
 // Google Sheets konfigurace
-const keyFile = path.join(__dirname, 'test-calendar-351811-66c2979693c0.json');
+const keyFile = path.join(__dirname, process.env.SERVICE_ACCOUNT_KEY); // Cesta k JSON klíči
 const auth = new google.auth.GoogleAuth({
-  keyFile,
-  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-});
-const spreadsheetId = '1hlTB8d_XgEUIv7uPkEBLb7Pirk4S7_-RdGLxoAiCz-8'; // Nahraďte správným ID tabulky
-const range = 'Form Responses!A:E'; // Nahraďte názvem listu
+      credentials: JSON.parse(process.env.SERVICE_ACCOUNT_KEY), // Načtení klíče z env
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+const spreadsheetId = process.env.SHEET_ID; // ID tabulky
+const range = 'Form Responses!A:E'; // Název listu
 
 // Funkce pro zápis do Google Sheets
 async function appendData(animal, productType, color, email) {
