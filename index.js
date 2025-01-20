@@ -3,8 +3,11 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const { google } = require('googleapis');
 const path = require('path');
+const jwt = require('jsonwebtoken');
 require('dotenv').config(); // Načtení environmentálních proměnných
+
 console.log('SERVICE_ACCOUNT_KEY:', process.env.SERVICE_ACCOUNT_KEY ? 'Načteno' : 'Nenalezeno');
+console.log("Aktuální načtení serveru", new Date().toISOString());
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,12 +18,38 @@ app.use(cors());
 
 // Google Sheets konfigurace
 const keyFile = path.join(__dirname, process.env.SERVICE_ACCOUNT_KEY); // Cesta k JSON klíči
+const credentials = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
 const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.SERVICE_ACCOUNT_KEY), // Načtení klíče z env
+  credentials,
   scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 });
+
 const spreadsheetId = process.env.SHEET_ID; // ID tabulky
 const range = 'Form Responses!A:E'; // Název listu
+
+// Funkce pro dekódování a ověření JWT tokenu
+function decodeAndVerifyJWT(token) {
+  try {
+    const decoded = jwt.decode(token, { complete: true });
+    console.log('JWT Header:', decoded.header);
+    console.log('JWT Payload:', decoded.payload);
+
+    // Kontrola audience
+    if (decoded.payload.aud !== 'https://www.googleapis.com/oauth2/v4/token') {
+      throw new Error('Audience není správná.');
+    }
+
+    // Kontrola času
+    const now = Math.floor(Date.now() / 1000);
+    if (decoded.payload.iat > now || decoded.payload.exp < now) {
+      throw new Error('Token není časově platný.');
+    }
+
+    console.log('JWT token je platný.');
+  } catch (error) {
+    console.error('Chyba při dekódování JWT:', error.message);
+  }
+}
 
 // Funkce pro zápis do Google Sheets
 async function appendData(animal, productType, color, email) {
@@ -28,6 +57,13 @@ async function appendData(animal, productType, color, email) {
     console.log('Inicializuji autentizaci...');
     const client = await auth.getClient();
     console.log('Autentizace proběhla úspěšně.');
+
+    // Získání JWT tokenu
+    const token = await auth.getAccessToken();
+    console.log('JWT token získán:', token);
+
+    // Dekódování a kontrola JWT
+    decodeAndVerifyJWT(token);
 
     console.log('Připravuji požadavek...');
     const request = {
