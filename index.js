@@ -4,6 +4,7 @@ const cors = require('cors');
 const { google } = require('googleapis');
 const path = require('path');
 require('dotenv').config(); // Načtení environmentálních proměnných
+console.log('SERVICE_ACCOUNT_KEY:', process.env.SERVICE_ACCOUNT_KEY ? 'Načteno' : 'Nenalezeno');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,9 +16,9 @@ app.use(cors());
 // Google Sheets konfigurace
 const keyFile = path.join(__dirname, process.env.SERVICE_ACCOUNT_KEY); // Cesta k JSON klíči
 const auth = new google.auth.GoogleAuth({
-      credentials: JSON.parse(process.env.SERVICE_ACCOUNT_KEY), // Načtení klíče z env
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-    });
+  credentials: JSON.parse(process.env.SERVICE_ACCOUNT_KEY), // Načtení klíče z env
+  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+});
 const spreadsheetId = process.env.SHEET_ID; // ID tabulky
 const range = 'Form Responses!A:E'; // Název listu
 
