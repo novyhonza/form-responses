@@ -1,1 +1,3 @@
 .env
+*.json
+nude_modules/
